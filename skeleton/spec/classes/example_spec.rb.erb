@@ -1,35 +1,26 @@
 require 'spec_helper'
 
-describe '<%= metadata.name %>' do
-  context 'supported operating systems' do
-    ['Debian', 'RedHat'].each do |osfamily|
-      describe "<%= metadata.name %> class without any parameters on #{osfamily}" do
-        let(:params) {{ }}
-        let(:facts) {{
-          :osfamily => osfamily,
-        }}
+describe '<%= metadata.name %>', :type => :class do
 
-        it { should compile.with_all_deps }
-
-        it { should contain_class('<%= metadata.name %>::params') }
-        it { should contain_class('<%= metadata.name %>::install').that_comes_before('<%= metadata.name %>::config') }
-        it { should contain_class('<%= metadata.name %>::config') }
-        it { should contain_class('<%= metadata.name %>::service').that_subscribes_to('<%= metadata.name %>::config') }
-
-        it { should contain_service('<%= metadata.name %>') }
-        it { should contain_package('<%= metadata.name %>').with_ensure('present') }
-      end
+  shared_examples_for 'a linux os' do
+    context 'with default paramameters' do
+      let(:params) {{ }}
+      it { should compile.with_all_deps }
+      it { should contain_class('<%= metadata.name %>::params') }
     end
   end
 
-  context 'unsupported operating system' do
-    describe '<%= metadata.name %> class without any parameters on Solaris/Nexenta' do
-      let(:facts) {{
-        :osfamily        => 'Solaris',
-        :operatingsystem => 'Nexenta',
-      }}
-
-      it { expect { should contain_package('<%= metadata.name %>') }.to raise_error(Puppet::Error, /Nexenta not supported/) }
+  context 'supported operating systems' do
+    ['Debian', 'RedHat'].each do |osfamily|
+      describe "<%= metadata.name %> class without any parameters on #{osfamily}" do
+        let(:facts) {{ :osfamily => osfamily, }}
+        it_behaves_like 'a linux os' do
+        end
+      end
     end
+  end
+  context 'unsupported operating systems' do
+    let(:facts) {{ :osfamily => 'xxx' }}
+    it { expect { should compile }.to raise_error(/not supported/) }
   end
 end
